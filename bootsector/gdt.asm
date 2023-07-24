@@ -21,7 +21,7 @@ gdt_start:
         db 0x0       ; Base address of the segment (bits 32-39) (Code segment base address is set to 0x00)
         db 10011010b ; Type flags: Bit 0 - present, Bit 1-2 - DPL, Bit 3 - S, Bit 4 - code, Bit 5 - conforming, Bit 6 - readable, Bit 7 - accessed
         db 11001111b ; Other flags: Bit 0 - granularity, Bit 1 - default operation, Bit 2- L, Bit 3 - AVL, Bit 4 - 7 - segment limit
-        db 0x0       ; Base address of the segment (bits 40-47) (Code segment base address is set to 0x00)
+        db 0x0       ; Base address of the segment (Code segment base address is set to 0x00)
 
     ; The data segment descriptor
     gdt_data:
@@ -30,7 +30,7 @@ gdt_start:
         db 0x0       ; Base address of the segment (bits 32-39) (Data segment base address is set to 0x00)
         db 10010010b ; Type flags: Bit 0 - present, Bit 1-2 - DPL, Bit 3 - S, Bit 4 - code, Bit 5 - conforming, Bit 6 - readable, Bit 7 - accessed
         db 11001111b ; Other flags: Bit 0 - granularity, Bit 1 - default operation, Bit 2- L, Bit 3 - AVL, Bit 4 - 7 - segment limit
-        db 0x0       ; Base address of the segment (bits 40-47) (Data segment base address is set to 0x00)
+        db 0x0       ; Base address of the segment (Data segment base address is set to 0x00)
 
 gdt_end:        ; The reason for putting a label at the end of the
                 ; GDT is so we can have the assembler calculate
