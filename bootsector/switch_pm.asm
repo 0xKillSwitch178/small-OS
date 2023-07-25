@@ -22,7 +22,7 @@ init_pm:
     mov fs, ax      ; Set the FS segment register to point to the same data segment
     mov gs, ax      ; Set the GS segment register to point to the same data segment
 
-    mov ebp, 0x9000 ; Set up the base pointer (EBP) to 0x9000 for stack operations
+    mov ebp, 0x90000 ; Set up the base pointer (EBP) to 0x9000 for stack operations
     mov esp, ebp    ; Set the stack pointer (ESP) to the same value as the base pointer, initializing the stack
 
     call BEGIN_PM   ; Call the BEGIN_PM function to start execution in protected mode

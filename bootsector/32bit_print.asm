@@ -1,26 +1,26 @@
-; The formula for accessing a specific character on the 80x25 grid is:
-;0xb8000 + 2 * (row * 80 + col)
-[bits 32] ;protected mode
-VIDEO_MEMORY equ 0xb8000
-COLOR_WHITE_ON_BLACK 0x0f
+[bits 32] ; Switch to protected mode
 
-get_string_pm:
-    pusha
-    mov edx , VIDEO_MEMORY
+VIDEO_MEMORY equ 0xb8000 ; The memory address of the text-mode video buffer
+COLOR_WHITE_ON_BLACK equ 0x0f ; Color attribute for white text on a black background
 
+; Function to print a null-terminated string in 32-bit protected mode
 print_string_pm:
-    mov al, [ebx];ebx will contain the string
-    mov ax, COLOR_WHITE_ON_BLACK
+    pusha ; Save all general-purpose registers on the stack
+    mov edx, VIDEO_MEMORY ; Set the video memory buffer address to EDX
 
-    cmp al, 0 ; check if end of string
-    je print_done_pm
+print_string_pm_loop:
+    mov al, [ebx] ; Load a character from the memory location pointed by EBX into AL
+    mov ah, COLOR_WHITE_ON_BLACK ; Set the color attribute for the character to AH
 
-    mov [edx], ax ; keep track of the location in the video memory
-    add ebx, 1
-    add edx , 2 ; n ext video postion in memory
+    cmp al, 0 ; Check if the character is null (end of string)
+    je print_done_pm ; If it's the end of the string, we are done
 
-    jmp print_string_pm
+    mov [edx], ax ; Store the character and its color attribute in the video memory
+    add ebx, 1 ; Move to the next character in the string
+    add edx, 2 ; Move to the next position in video memory (each character takes 2 bytes)
+
+    jmp print_string_pm_loop ; Repeat the process for the next character in the string
 
 print_done_pm:
-    popa
-    ret
+    popa ; Restore the saved general-purpose registers
+    ret ; Return from the function
