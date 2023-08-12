@@ -1,6 +1,7 @@
 #include "screen.h"
 #include "ports.h"
 
+/* Declaration of private functions */
 int get_cursor_offset();
 void set_cursor_offset(int offset);
 int print_char(char ch, int col, int row, int attr);
@@ -8,7 +9,17 @@ int get_offset(int col, int row);
 int get_offset_row(int offset);
 int get_offset_col(int offset);
 
+/**********************************************************
+ * Public Kernel API functions                            *
+ **********************************************************/
 
+/**
+ * Print a message at the specified position on the screen
+ * If col or row is negative, use the current cursor position
+ * @param msg Message to be printed
+ * @param col Column position (0-based)
+ * @param row Row position (0-based)
+ */
 void print_at_position(char *msg, int col, int row){
     int offset;
     if(col >= 0 && row >= 0)
@@ -27,11 +38,22 @@ void print_at_position(char *msg, int col, int row){
     }
 }
 
+/**
+ * Print a message starting from the current cursor position
+ * @param msg Message to be printed
+ */
 void print(char *msg){
     print_at_position(msg, -1, -1);
 }
 
+/**********************************************************
+ * Private kernel functions                               *
+ **********************************************************/
 
+/**
+ * Get the current cursor offset
+ * @return Current cursor offset (position in video memory)
+ */
 int get_cursor_offset(){
     // Output a byte (14) to I/O port 0x3d
     io_port_byte_out(REG_SCREEN_CTRL, 14);
@@ -44,11 +66,14 @@ int get_cursor_offset(){
     io_port_byte_out(REG_SCREEN_CTRL, 15);
     position += io_port_byte_in(REG_SCREEN_DATA);
 
-    // Calculate an offset value from the 'position' variable, each unit represents two bytes
+    // Calculate the offset value from the 'position' variable, each unit represents two bytes
     int offset = position * 2;
     return offset;
 }
 
+/**
+ * Clear the entire screen by filling it with spaces and setting the cursor to (0, 0)
+ */
 void clear_screen(){
     int screen_size = MAX_COLS * MAX_ROWS;
     char *video_address = VGA_VIDEO_ADDRESS;
@@ -61,7 +86,10 @@ void clear_screen(){
     set_cursor_offset(get_offset(0,0));
 }
 
-
+/**
+ * Set the cursor offset to the specified position
+ * @param offset Offset to set (position in video memory)
+ */
 void set_cursor_offset(int offset){
     offset /= 2;
     io_port_byte_out(REG_SCREEN_CTRL, 14);
@@ -70,7 +98,15 @@ void set_cursor_offset(int offset){
     io_port_byte_out(REG_SCREEN_DATA, (unsigned char)(offset & 0xff));
 }
 
-
+/**
+ * Print a character at the specified position on the screen
+ * If col or row is negative, use the current cursor position
+ * @param ch Character to be printed
+ * @param col Column position (0-based)
+ * @param row Row position (0-based)
+ * @param attr Character attribute (e.g., color)
+ * @return Offset of the next character
+ */
 int print_char(char ch, int col, int row, int attr){
     unsigned char* video_address = (unsigned char*) VGA_VIDEO_ADDRESS;
     if(!attr)
@@ -101,17 +137,30 @@ int print_char(char ch, int col, int row, int attr){
     return offset;
 }
 
-
+/**
+ * Get the linear memory offset for the specified (col, row) coordinate
+ * @param col Column position (0-based)
+ * @param row Row position (0-based)
+ * @return Offset (position in video memory) for the given coordinate
+ */
 int get_offset(int col, int row){
     return 2 * (row * MAX_COLS + col);
 }
 
-
+/**
+ * Get the row index for the specified offset
+ * @param offset Offset (position in video memory)
+ * @return Row index (0-based) corresponding to the given offset
+ */
 int get_offset_row(int offset){
     return offset / (2 * MAX_COLS);
 }
 
-
+/**
+ * Get the column index for the specified offset
+ * @param offset Offset (position in video memory)
+ * @return Column index (0-based) corresponding to the given offset
+ */
 int get_offset_col(int offset){
-    return (offset - (get_offset_row(offset)*2*MAX_COLS)) / 2;
+    return (offset - (get_offset_row(offset) * 2 * MAX_COLS)) / 2;
 }
