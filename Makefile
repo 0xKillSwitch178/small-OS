@@ -1,31 +1,48 @@
-# Define the architecture and entry point for the linker
-LDFLAGS = -m elf_i386 -Ttext 0x1000
+C_SOURCES = $(wildcard kernel/*.c drivers/*.c)
+HEADERS = $(wildcard kernel/*.h drivers/*.h)
 
-# First rule is the one executed when no parameters are fed to the Makefile
-all: run
+# Nice syntax for file extension replacement
+OBJ = ${C_SOURCES:.c=.o}
 
-# Notice how dependencies are built as needed
-kernel/kernel.bin: bootsector/kernel_entry.o kernel/kernel.o
-	ld $(LDFLAGS) -o $@ $^ --oformat binary
+# Change this if your cross-compiler is somewhere else
+CC = /usr/bin/gcc
+GDB = /usr/bin/gdb
+NASM = /usr/bin/nasm
+# -g: Use debugging symbols in gcc
+CFLAGS = -g -m32 -fno-PIC
 
-bootsector/kernel_entry.o: bootsector/kernel_entry.asm
-	nasm -f elf -o $@ $<
+# First rule is run by default
+os-image.bin: boot/boot_sector_main.bin kernel.bin
+	cat $^ > os-image.bin
 
-kernel/kernel.o: kernel/kernel.c
-	gcc -m32 -ffreestanding -c $< -o $@
+# '--oformat binary' deletes all symbols as a collateral, so we don't need
+# to 'strip' them manually on this case
+kernel.bin: boot/kernel_entry.o ${OBJ}
+	ld -m elf_i386 -o $@ -Ttext 0x1000 boot/kernel_entry.o ${OBJ} --oformat binary
 
-# Rule to disassemble the kernel - may be useful for debugging
-kernel/kernel.dis: kernel/kernel.bin
-	ndisasm -b 32 $< > $@
+# Used for debugging purposes
+kernel.elf: boot/kernel_entry.o ${OBJ}
+	ld -m elf_i386 -o $@ -Ttext 0x1000 boot/kernel_entry.o ${OBJ}
 
-bootsector/bootsect.bin: bootsector/boot_sector_main.asm
-	nasm -f bin -o $@ $<
+run: os-image.bin
+	qemu-system-i386 -fda os-image.bin
 
-bins/os-image.bin: bootsector/boot_sector_main.bin kernel/kernel.bin
-	cat $^ > $@
+# Open the connection to qemu and load our kernel-object file with symbols
+debug: os-image.bin kernel.elf
+	qemu-system-i386 -s -fda os-image.bin &
+	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
-run: bins/os-image.bin
-	qemu-system-i386 -fda $<
+# Generic rules for wildcards
+# To make an object, always compile from its .c
+%.o: %.c ${HEADERS}
+	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
+
+%.o: %.asm
+	${NASM} $< -f elf -o $@
+
+%.bin: %.asm
+	${NASM} $< -f bin -o $@
 
 clean:
-	rm -f kernel/kernel.bin bootsector/kernel_entry.o kernel/kernel.o kernel/kernel.dis bootsector/boot_sector_main.bin bins/os-image.bin
+	rm -rf *.bin *.dis *.o os-image.bin *.elf
+	rm -rf kernel/*.o boot/*.bin drivers/*.o boot/*.o

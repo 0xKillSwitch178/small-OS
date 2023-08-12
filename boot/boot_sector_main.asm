@@ -21,11 +21,11 @@ KERNEL_OFFSET equ 0x1000 ; The offset where we will load our kernel.
     jmp $ ; Infinite loop to halt execution (optional, as bootloader will not reach this point)
 
 ; Include external functions
-%include "bootsector/boot_sector_print.asm"
-%include "bootsector/boot_sect_disk_load.asm"
-%include "bootsector/gdt.asm"
-%include "bootsector/32bit_print.asm"
-%include "bootsector/switch_pm.asm"
+%include "boot/boot_sector_print.asm"
+%include "boot/boot_sect_disk_load.asm"
+%include "boot/gdt.asm"
+%include "boot/32bit_print.asm"
+%include "boot/switch_pm.asm"
 
 [bits 16]
 load_kernel:
