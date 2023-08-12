@@ -1,0 +1,117 @@
+#include "screen.h"
+#include "ports.h"
+
+int get_cursor_offset();
+void set_cursor_offset(int offset);
+int print_char(char ch, int col, int row, int attr);
+int get_offset(int col, int row);
+int get_offset_row(int offset);
+int get_offset_col(int offset);
+
+
+void print_at_position(char *msg, int col, int row){
+    int offset;
+    if(col >= 0 && row >= 0)
+        offset = get_offset(col, row);
+    else{
+        offset = get_cursor_offset();
+        row = get_offset_row(offset);
+        col = get_offset_col(offset);
+    }
+
+    int i=0;
+    while(msg[i] != 0){
+        offset = print_char(msg[i++], col, row, TEXT_COLOUR);
+        row = get_offset_row(offset);
+        col = get_offset_col(offset);
+    }
+}
+
+void print(char *msg){
+    print_at_position(msg, -1, -1);
+}
+
+
+int get_cursor_offset(){
+    // Output a byte (14) to I/O port 0x3d
+    io_port_byte_out(REG_SCREEN_CTRL, 14);
+
+    // Read a byte from I/O port 0x3d5, then shift it left by 8 bits
+    int position = io_port_byte_in(REG_SCREEN_DATA);
+    position = position << 8;
+
+    // Output a byte (15) to I/O port 0x3d4, then add the result of reading another byte from I/O port 0x3d5
+    io_port_byte_out(REG_SCREEN_CTRL, 15);
+    position += io_port_byte_in(REG_SCREEN_DATA);
+
+    // Calculate an offset value from the 'position' variable, each unit represents two bytes
+    int offset = position * 2;
+    return offset;
+}
+
+void clear_screen(){
+    int screen_size = MAX_COLS * MAX_ROWS;
+    char *video_address = VGA_VIDEO_ADDRESS;
+
+    for(int i=0; i < screen_size; i++){
+        video_address[i*2] = ' ';
+        video_address[i*2+1] = TEXT_COLOUR;
+    }
+
+    set_cursor_offset(get_offset(0,0));
+}
+
+
+void set_cursor_offset(int offset){
+    offset /= 2;
+    io_port_byte_out(REG_SCREEN_CTRL, 14);
+    io_port_byte_out(REG_SCREEN_DATA, (unsigned char)(offset >> 8));
+    io_port_byte_out(REG_SCREEN_CTRL, 15);
+    io_port_byte_out(REG_SCREEN_DATA, (unsigned char)(offset & 0xff));
+}
+
+
+int print_char(char ch, int col, int row, int attr){
+    unsigned char* video_address = (unsigned char*) VGA_VIDEO_ADDRESS;
+    if(!attr)
+        attr = TEXT_COLOUR;
+    
+    if(col >= MAX_COLS || row >= MAX_ROWS){
+        video_address[2*(MAX_COLS)*(MAX_ROWS)-2] = 'E';
+        video_address[2*(MAX_COLS)*(MAX_ROWS)-1] = RED_ON_WHITE;
+        return get_offset(col, row);
+    }
+
+    int offset;
+    if(col >= 0 && row >= 0)
+        offset = get_offset(col, row);
+    else
+        offset = get_cursor_offset();
+    
+    if(ch == '\n'){
+        row = get_offset_row(offset);
+        offset = get_offset(0, row+1);
+    }
+    else{
+        video_address[offset] = ch;
+        video_address[offset+1] = attr;
+        offset += 2;
+    }
+
+    return offset;
+}
+
+
+int get_offset(int col, int row){
+    return 2 * (row * MAX_COLS + col);
+}
+
+
+int get_offset_row(int offset){
+    return offset / (2 * MAX_COLS);
+}
+
+
+int get_offset_col(int offset){
+    return (offset - (get_offset_row(offset)*2*MAX_COLS)) / 2;
+}
