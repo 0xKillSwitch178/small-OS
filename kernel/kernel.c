@@ -1,9 +1,17 @@
-#include "../drivers/screen.h"// Include the header file that likely defines functions for I/O port operations
+#include "../drivers/screen.h"
+#include "utils.h"
 
 void main() {
     clear_screen();
-    print_at_position("X", 1, 6);
-    print_at_position("this text spans multiple lines", 75, 10);
-    print_at_position("there is a line\n break", 0 , 20);
-    print_at_position("what happens when we run out of space", 45, 24);
+
+    /* Fill up the screen */
+    int i = 0;
+    for (i = 0; i < 24; i++) {
+        char str[255];
+        int_to_ascii(i, str);
+        print_at_position(str, 0, i);
+    }
+
+    print_at_position("This text forces the kernel to scroll. Row 0 will disappear. ", 60, 24);
+    print("And with this text, the kernel will scroll again, and row 1 will disappear too!");
 }
