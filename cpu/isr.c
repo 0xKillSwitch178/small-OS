@@ -1,8 +1,10 @@
 #include "isr.h"
 #include "idt.h"
 #include "../drivers/screen.h"
-#include "../kernel/utils.h"
+#include "../stdlib/strings.h"
+#include "../drivers/ports.h"
 
+isr_t interrupt_handlers[256];
 
 char *exception_messages[] = {
     "Division By Zero",
@@ -74,17 +76,74 @@ void isr_init(){
     set_idt_gate(30, (u32)isr30);
     set_idt_gate(31, (u32)isr31);
 
+    // Remap the PIC
+    io_port_byte_out(0x20, 0x11);
+    io_port_byte_out(0xA0, 0x11);
+    io_port_byte_out(0x21, 0x20);
+    io_port_byte_out(0xA1, 0x28);
+    io_port_byte_out(0x21, 0x04);
+    io_port_byte_out(0xA1, 0x02);
+    io_port_byte_out(0x21, 0x01);
+    io_port_byte_out(0xA1, 0x01);
+    io_port_byte_out(0x21, 0x0);
+    io_port_byte_out(0xA1, 0x0); 
+
+    // Initthe IRQs
+    set_idt_gate(32, (u32)irq0);
+    set_idt_gate(33, (u32)irq1);
+    set_idt_gate(34, (u32)irq2);
+    set_idt_gate(35, (u32)irq3);
+    set_idt_gate(36, (u32)irq4);
+    set_idt_gate(37, (u32)irq5);
+    set_idt_gate(38, (u32)irq6);
+    set_idt_gate(39, (u32)irq7);
+    set_idt_gate(40, (u32)irq8);
+    set_idt_gate(41, (u32)irq9);
+    set_idt_gate(42, (u32)irq10);
+    set_idt_gate(43, (u32)irq11);
+    set_idt_gate(44, (u32)irq12);
+    set_idt_gate(45, (u32)irq13);
+    set_idt_gate(46, (u32)irq14);
+    set_idt_gate(47, (u32)irq15);
+
     set_idt();
 }
 
 
-void isr_handler(registers_t registers){
-    print("recieved intteruot: ");
+void isr_handler(registers_t *registers){
+    print("recieved intterupt: ");
     char buff[3];
-    int_to_ascii(registers.int_no, buff);
+    int_to_ascii(registers->int_no, buff);
     print(buff);
     print("\n");
-    print(exception_messages[registers.int_no]);
+    print(exception_messages[registers->int_no]);
     print("\n");
 
+}
+
+void register_interrupt_handler(u8 entry, isr_t handler) {
+    interrupt_handlers[entry] = handler;
+}
+
+
+void irq_handler(registers_t *registers) {
+    /* After every interrupt we need to send an EOI to the PICs
+     * or they will not send another interrupt again */
+    if (registers->int_no >= 40) io_port_byte_out(0xA0, 0x20); /* slave */
+    io_port_byte_out(0x20, 0x20); /* master */
+
+    /* Handle the interrupt in a more modular way */
+    if (interrupt_handlers[registers->int_no] != 0) {
+        isr_t handler = interrupt_handlers[registers->int_no];
+        handler(registers);
+    }
+}
+
+void irq_init(){
+    /* Enable interruptions */
+    asm volatile("sti");
+    /* IRQ0: timer */
+    init_timer(50);
+    /* IRQ1: keyboard */
+    init_keyboard();
 }

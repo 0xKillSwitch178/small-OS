@@ -1,5 +1,5 @@
 #include "idt.h"
-#include "../kernel/utils.h"
+#include "../stdlib/bitwise.h"
 
 void set_idt_gate(int gate_index, u32 handler){
     idt[gate_index].lower_bytes_handler_function = lower_16_bits(handler);
