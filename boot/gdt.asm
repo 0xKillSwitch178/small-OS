@@ -6,36 +6,34 @@
 ; base address (32 bits), size of segment (20 bits), privilege level (2 bits), read/write (1 bit), and more.
 ; We will define the segments using 'db' (define byte) and 'dd' (define doubleword) directives.
 
-
 ; GDT (Global Descriptor Table) definitions
 gdt_start:
     ; The null descriptor, must be used to check for errors and raise interrupts
     gdt_null:
-        dd 0x0   ; Segment size (bits 0-31) (Null descriptor has a size of 0)
-        dd 0x0   ; Segment base address (bits 0-31) (Null descriptor has a base address of 0)
+        dd 0x0     ; Segment size (bits 0-31) (Null descriptor has a size of 0)
+        dd 0x0     ; Segment base address (bits 0-31) (Null descriptor has a base address of 0)
 
     ; The code segment descriptor
     gdt_code:
-        dw 0xffff    ; Size of the segment (bits 0-15) (Segment size is set to 0xFFFF, 65535 bytes)
-        dw 0x0       ; Base address of the segment (bits 16-31) (Code segment base address is set to 0x0000)
-        db 0x0       ; Base address of the segment (bits 32-39) (Code segment base address is set to 0x00)
+        dw 0xffff  ; Size of the segment (bits 0-15) (Segment size is set to 0xFFFF, 65535 bytes)
+        dw 0x0     ; Base address of the segment (bits 16-31) (Code segment base address is set to 0x0000)
+        db 0x0     ; Base address of the segment (bits 32-39) (Code segment base address is set to 0x00)
         db 10011010b ; Type flags: Bit 0 - present, Bit 1-2 - DPL, Bit 3 - S, Bit 4 - code, Bit 5 - conforming, Bit 6 - readable, Bit 7 - accessed
         db 11001111b ; Other flags: Bit 0 - granularity, Bit 1 - default operation, Bit 2- L, Bit 3 - AVL, Bit 4 - 7 - segment limit
-        db 0x0       ; Base address of the segment (Code segment base address is set to 0x00)
+        db 0x0     ; Base address of the segment (Code segment base address is set to 0x00)
 
     ; The data segment descriptor
     gdt_data:
-        dw 0xffff    ; Size of the segment (bits 0-15) (Segment size is set to 0xFFFF, 65535 bytes)
-        dw 0x0       ; Base address of the segment (bits 16-31) (Data segment base address is set to 0x0000)
-        db 0x0       ; Base address of the segment (bits 32-39) (Data segment base address is set to 0x00)
+        dw 0xffff  ; Size of the segment (bits 0-15) (Segment size is set to 0xFFFF, 65535 bytes)
+        dw 0x0     ; Base address of the segment (bits 16-31) (Data segment base address is set to 0x0000)
+        db 0x0     ; Base address of the segment (bits 32-39) (Data segment base address is set to 0x00)
         db 10010010b ; Type flags: Bit 0 - present, Bit 1-2 - DPL, Bit 3 - S, Bit 4 - code, Bit 5 - conforming, Bit 6 - readable, Bit 7 - accessed
         db 11001111b ; Other flags: Bit 0 - granularity, Bit 1 - default operation, Bit 2- L, Bit 3 - AVL, Bit 4 - 7 - segment limit
-        db 0x0       ; Base address of the segment (Data segment base address is set to 0x00)
+        db 0x0     ; Base address of the segment (Data segment base address is set to 0x00)
 
 gdt_end:        ; The reason for putting a label at the end of the
                 ; GDT is so we can have the assembler calculate
                 ; the size of the GDT for the GDT descriptor (below)
-
 
 ; GDT descriptor
 gdt_descriptor:
