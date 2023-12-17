@@ -9,3 +9,4 @@
 void clear_screen();
 void print_at_position(char *msg, int col, int row);
 void print(char *msg);
+void print_backspace();

@@ -1,6 +1,7 @@
 #include "screen.h"
 #include "ports.h"
-#include "../kernel/utils.h"
+#include "../stdlib/mem.h"
+#include "../cpu/types.h"
 
 /* Declaration of private functions */
 int get_cursor_offset();
@@ -39,6 +40,14 @@ void print_at_position(char *msg, int col, int row) {
         col = get_offset_col(offset);
     }
 }
+
+void print_backspace() {
+    int offset = get_cursor_offset()-2;
+    int row = get_offset_row(offset);
+    int col = get_offset_col(offset);
+    print_char(0x08, col, row, TEXT_COLOUR);
+}
+
 
 /**
  * Print a message starting from the current cursor position
@@ -184,7 +193,7 @@ int handle_scrolling(int offset) {
     }
 
     char *last_line = get_offset(0, MAX_ROWS - 1) + VGA_VIDEO_ADDRESS;
-    for (msize_t i = 0; i < MAX_COLS * 2; i++) {
+    for (msize_t i= 0; i < MAX_COLS * 2; i++) {
         last_line[i] = 0;
     }
     offset -= 2 * MAX_COLS;
