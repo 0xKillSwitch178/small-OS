@@ -21,7 +21,6 @@ void user_input(char *input) {
         print("Stopping the CPU. Bye!\n");
         asm volatile("hlt");
     } else if (strcmp(input, "PAGE") == 0) {
-        /* Lesson 22: Code to test kmalloc, the rest is unchanged */
         u32 phys_addr;
         u32 page = malloc(1000, 1, &phys_addr);
         char page_str[16] = "";
